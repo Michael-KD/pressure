@@ -30,7 +30,7 @@ class Gui(tk.Tk):
         # get users screen resolution and maximize window
         self.screen_width = self.winfo_screenwidth()
         self.screen_height = self.winfo_screenheight()
-        self.geometry('1000x800')
+        self.geometry('1000x600')
 
         # frame for the plot
         self.plot_frame = ttk.Frame(self, borderwidth=1, relief="solid")
