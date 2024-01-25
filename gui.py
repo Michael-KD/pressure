@@ -9,6 +9,13 @@ import pandas as pd
 import threading
 import time
 import json
+import csv
+
+import socket
+import sys
+from time import sleep
+import random
+from struct import pack
 
 class Gui(tk.Tk):
     def __init__(self):
@@ -62,20 +69,27 @@ class Gui(tk.Tk):
         self.mainloop()
 
     def update_data(self):
-        """Updates the dataframe, df, from data.csv"""
+        """Updates the dataframe, df, from udp_data.csv"""
         last_run_time = time.time()
         while self.running:
             if time.time() - last_run_time >= self.time_refresh:
                 try:
-                    df = pd.read_csv("data.csv")
-                
+                    # Receive data over UDP
+                    data, address = self.sock.recvfrom(4096)
+                    data = data.decode()
+
+                    # Write the data to the CSV file
+                    self.csv_writer.writerow(data.split(','))
+
+                    df = pd.read_csv("udp_data.csv")
+                    
                     # Update the graph with the new data
                     self.safe_after(0, self.update_graph, df)            
 
                     last_run_time = time.time()
                 except pd.errors.EmptyDataError:
-                    print("data.csv is empty. Waiting for data...")
-
+                    print("udp_data.csv is empty. Waiting for data...")
+                    
     def update_graph(self, df):
         """Updates the graph with the new data"""
         for ax in self.axes.values():
@@ -112,8 +126,20 @@ class Gui(tk.Tk):
     def start_test(self):
         """Starts the test"""
         if self.thread is not None:
+            # Create a UDP socket
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+            # Bind the socket to the port
+            server_address = ('', 12345)  # '' means all available interfaces
+            self.sock.bind(server_address)
+
+            # Open the CSV file
+            self.csv_file = open('udp_data.csv', 'w', newline='')
+            self.csv_writer = csv.writer(self.csv_file)
+
             self.running = True
             self.thread.start()
+
 
     def end_test(self):
         """Ends the test"""
@@ -123,6 +149,10 @@ class Gui(tk.Tk):
                 self.thread.join()
             self.thread = None
             self.current_time = 0
+
+            # Close the CSV file and the UDP socket
+            self.csv_file.close()
+            self.sock.close()
 
 if __name__ == "__main__":
         app = Gui()
