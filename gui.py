@@ -9,8 +9,6 @@ import pandas as pd
 import threading
 import time
 import json
-import asyncio
-import websockets
 
 class Gui(tk.Tk):
     def __init__(self):
@@ -59,10 +57,24 @@ class Gui(tk.Tk):
     def start_gui(self):
         """Starts the gui and the thread"""
         self.running = True
-        self.df = pd.DataFrame(columns=["Time", "Pressure", "Temperature"])
-        self.thread = threading.Thread(target=self.start_websocket_client, daemon=True)
-        self.thread.start()
+        self.thread = threading.Thread(target=self.update_data)
+        self.thread.daemon = True
         self.mainloop()
+
+    def update_data(self):
+        """Updates the dataframe, df, from data.csv"""
+        last_run_time = time.time()
+        while self.running:
+            if time.time() - last_run_time >= self.time_refresh:
+                try:
+                    df = pd.read_csv("data.csv")
+                
+                    # Update the graph with the new data
+                    self.safe_after(0, self.update_graph, df)            
+
+                    last_run_time = time.time()
+                except pd.errors.EmptyDataError:
+                    print("data.csv is empty. Waiting for data...")
 
     def update_graph(self, df):
         """Updates the graph with the new data"""
@@ -80,17 +92,6 @@ class Gui(tk.Tk):
 
         self.canvas.draw()
 
-    async def websocket_client(self):
-        uri = "ws://raspberrypi.local:8765" # replace**
-        async with websockets.connect(uri) as websocket:
-            while self.running:
-                data = await websocket.recv()
-                time, pressure, temperature = map(float, data.split(","))
-                self.df = self.df.append({"Time": time, "Pressure": pressure, "Temperature": temperature}, ignore_index=True)
-                self.safe_after(0, self.update_graph, self.df)
-
-    def start_websocket_client(self):
-        asyncio.run(self.websocket_client())
 
     def on_closing(self):
         """Called when closing the gui, destroys the gui and closes the thread"""
