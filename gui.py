@@ -130,7 +130,7 @@ class Gui(tk.Tk):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
             # Bind the socket to the port
-            server_address = ('', 12345)  # '' means all available interfaces
+            server_address = ('0.0.0.0', 12345)
             self.sock.bind(server_address)
 
             # Open the CSV file

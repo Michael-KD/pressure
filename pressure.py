@@ -80,7 +80,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server_address = ('169.231.44.202', 12345)  # Replace <your_pc_ip> with the IP address of your PC
 
 
-def read_data():
+def read_data(writer, start_time):
     pressures = []
     temperatures = []
     for _ in range(10):
