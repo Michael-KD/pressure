@@ -1,10 +1,8 @@
 import smbus2
 import time
-import csv
 import argparse
 
 import socket
-import sys
 from struct import unpack
 
 ### 0.001s -> 1ms
@@ -77,10 +75,10 @@ print("starting read loop")
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Server address
-server_address = ('169.231.44.202', 12345)  # Replace <your_pc_ip> with the IP address of your PC
+server_address = ('169.231.44.202', 12345)  # Replace with the IP address of your PC
 
 
-def read_data(writer, start_time):
+def read_data(file, start_time):
     pressures = []
     temperatures = []
     for _ in range(10):
@@ -170,26 +168,24 @@ def read_data(writer, start_time):
     avg_temperature = sum(temperatures) / len(temperatures)
 
     # Write the time, pressure, and temperature to the CSV file
-    writer.writerow([time.time()-start_time, avg_pressure, avg_temperature])
-
-    data = f"{time.time()-start_time},{avg_pressure},{avg_temperature}"
+    data = f"{time.time()-start_time},{avg_pressure},{avg_temperature}\n"
+    file.write(data)
 
     # Send data over UDP
     sock.sendto(data.encode(), server_address)
 
 # Open a CSV file to write the data
-with open('data.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(["Time", "Pressure", "Temperature"])
+with open('data.csv', 'w') as file:
+    file.write("Time,Pressure,Temperature\n")
 
     start_time = time.time()
 
     # run 1000 times
     if args.loops == 0:
         while True:
-            read_data(writer, start_time)
+            read_data(file, start_time)
     else:
         for i in range(args.loops):
-            read_data(writer, start_time)    
-        
+            read_data(file, start_time)    
+
 print("finished read loop, time taken:" + str(time.time() - start_time) + " seconds")

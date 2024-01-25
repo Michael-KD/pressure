@@ -1,4 +1,3 @@
-import random
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog, messagebox
@@ -8,13 +7,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 import threading
 import time
-import json
-import csv
 
 import socket
-import sys
 from time import sleep
-import random
 from struct import pack
 
 class Gui(tk.Tk):
@@ -77,9 +72,10 @@ class Gui(tk.Tk):
                     # Receive data over UDP
                     data, address = self.sock.recvfrom(4096)
                     data = data.decode()
+                    print(data)
 
                     # Write the data to the CSV file
-                    self.csv_writer.writerow(data.split(','))
+                    self.csv_file.write(','.join(data) + '\n')
 
                     df = pd.read_csv("udp_data.csv")
                     
@@ -134,8 +130,7 @@ class Gui(tk.Tk):
             self.sock.bind(server_address)
 
             # Open the CSV file
-            self.csv_file = open('udp_data.csv', 'w', newline='')
-            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_file = open('udp_data.csv', 'w')
 
             self.running = True
             self.thread.start()
