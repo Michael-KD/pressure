@@ -2,8 +2,11 @@ import smbus2
 import time
 import csv
 import argparse
+import asyncio
+import websockets
 
 ### 0.001s -> 1ms
+
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Read sensor data with specified OSR value.')
@@ -71,7 +74,10 @@ print("starting read loop")
 
 
 
-def read_data():
+def read_data(start_time):
+    pressures = []
+    temperatures = []
+    for _ in range(10):
         # MS5803_01BA address, 0x76(118)
         # 0x40(64) Pressure conversion(OSR = INPUT) command
         bus.write_byte(0x76, D1_command)
@@ -151,25 +157,38 @@ def read_data():
         else:
             print(f"Invalid model number: {args.model}")
             exit(1)
+        pressures.append(pressure)
+        temperatures.append(cTemp)   
 
-        # Write the time, pressure, and temperature to the CSV file
-        writer.writerow([time.time()-start_time, pressure, cTemp])
+    avg_pressure = sum(pressures) / len(pressures)
+    avg_temperature = sum(temperatures) / len(temperatures)
 
+    # Write the time, pressure, and temperature to the CSV file
+    writer.writerow([time.time()-start_time, avg_pressure, avg_temperature])
+
+    # Return the time, pressure, and temperature as a string
+    return f"{time.time()-start_time},{avg_pressure},{avg_temperature}"
+
+
+
+async def send_data(websocket, path):
+    start_time = time.time()
+    if args.loops == 0:
+        while True:
+            data = read_data(start_time)
+            await websocket.send(data)
+    else:
+        for i in range(args.loops):
+            data = read_data(start_time)
+            await websocket.send(data)
+    print("finished read loop, time taken:" + str(time.time() - start_time) + " seconds")    
 
 # Open a CSV file to write the data
 with open('data.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["Time", "Pressure", "Temperature"])
 
-    start_time = time.time()
-    
-# run 1000 times
-    if args.loops == 0:
-        while True:
-            read_data()
-    else:
-        for i in range(args.loops):
-            read_data()
-    
-        
-print("finished read loop, time taken:" + str(time.time() - start_time) + " seconds")
+    start_server = websockets.serve(send_data, "169.231.113.131", 8765) # replace IP if changed
+
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()

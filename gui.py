@@ -3,19 +3,21 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog, messagebox
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 import threading
 import time
 import json
+import asyncio
+import websockets
 
 class Gui(tk.Tk):
     def __init__(self):
 
-        self.time_refresh = 0.3
+        self.time_refresh = 2
 
         super().__init__()
-
 
         # setup the window
         self.title('Pressure Tests')
@@ -23,16 +25,18 @@ class Gui(tk.Tk):
         # get users screen resolution and maximize window
         self.screen_width = self.winfo_screenwidth()
         self.screen_height = self.winfo_screenheight()
-        self.geometry('1200x600+50+50')
-        self.state('zoomed')
+        self.geometry('1000x800')
 
         # frame for the plot
         self.plot_frame = ttk.Frame(self, borderwidth=1, relief="solid")
         self.plot_frame.grid(row=2, column=0, sticky='nsew', padx=5, pady=5)
         
         # figure for the plot and create an axis, ** bug with tkinter, plt.subplots() breaks window size/zoom ??
-        self.fig = plt.Figure(figsize=(10, 5), dpi=75)
-        self.axes = {'Pressure': self.fig.add_subplot(1, 2, 1), 'Temperature': self.fig.add_subplot(1, 2, 2)}
+        self.fig = Figure(figsize=(10, 5), dpi=75)
+        self.axes = {
+            'Pressure': self.fig.add_subplot(211),  # 2 rows, 1 column, first plot
+            'Temperature': self.fig.add_subplot(212)  # 2 rows, 1 column, second plot
+        }
         self.fig.subplots_adjust(left=0.04, right=0.96, bottom=0.07, top=0.95, wspace=0.1, hspace=0.25)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
@@ -55,19 +59,10 @@ class Gui(tk.Tk):
     def start_gui(self):
         """Starts the gui and the thread"""
         self.running = True
-        self.thread = threading.Thread(target=self.update_data)
-        self.thread.daemon = True
+        self.df = pd.DataFrame(columns=["Time", "Pressure", "Temperature"])
+        self.thread = threading.Thread(target=self.start_websocket_client, daemon=True)
+        self.thread.start()
         self.mainloop()
-
-    def update_data(self):
-        """Updates the dataframe, df, from data.csv"""
-        while self.running:
-            df = pd.read_csv("data.csv")
-            
-            # Update the graph with the new data
-            self.safe_after(0, self.update_graph, df)            
-
-            time.sleep(self.time_refresh)
 
     def update_graph(self, df):
         """Updates the graph with the new data"""
@@ -79,11 +74,23 @@ class Gui(tk.Tk):
             ax.plot(df["Time"], df[column], marker='o', label=column)
             ax.set_title(f"{column}")
             ax.set_xlabel("Time")
+            ax.set_ylabel(column)
             ax.grid(True)
 
 
         self.canvas.draw()
 
+    async def websocket_client(self):
+        uri = "ws://raspberrypi.local:8765" # replace**
+        async with websockets.connect(uri) as websocket:
+            while self.running:
+                data = await websocket.recv()
+                time, pressure, temperature = map(float, data.split(","))
+                self.df = self.df.append({"Time": time, "Pressure": pressure, "Temperature": temperature}, ignore_index=True)
+                self.safe_after(0, self.update_graph, self.df)
+
+    def start_websocket_client(self):
+        asyncio.run(self.websocket_client())
 
     def on_closing(self):
         """Called when closing the gui, destroys the gui and closes the thread"""
@@ -91,7 +98,7 @@ class Gui(tk.Tk):
         self.running = False
         self.destroy()
         time.sleep(self.time_refresh)
-        if self.thread is not None:
+        if self.thread.is_alive():
             self.thread.join()
         self.quit()
 
@@ -111,7 +118,7 @@ class Gui(tk.Tk):
         """Ends the test"""
         if self.running == True:
             self.running = False
-            if self.thread.is_alive():  # Check if the thread is alive before trying to join it
+            if self.thread.is_alive():
                 self.thread.join()
             self.thread = None
             self.current_time = 0
