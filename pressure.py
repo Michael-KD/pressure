@@ -75,7 +75,7 @@ print("starting read loop")
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Server address
-server_address = ('169.231.44.202', 12345)  # Replace with the IP address of your PC
+server_address = ('169.231.49.78', 12345)  # Replace with the IP address of your PC
 
 
 def read_data(file, start_time):
