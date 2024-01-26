@@ -17,6 +17,9 @@ class Gui(tk.Tk):
 
         self.time_refresh = 2
 
+        with open('udp_data.csv', 'w') as f:
+            f.write('Time,Pressure,Temperature\n')
+
         super().__init__()
 
         # setup the window
@@ -75,7 +78,7 @@ class Gui(tk.Tk):
                     print(data)
 
                     # Write the data to the CSV file
-                    self.csv_file.write(','.join(data) + '\n')
+                    self.csv_file.write(data)
 
                     df = pd.read_csv("udp_data.csv")
                     
@@ -99,9 +102,7 @@ class Gui(tk.Tk):
             ax.set_ylabel(column)
             ax.grid(True)
 
-
         self.canvas.draw()
-
 
     def on_closing(self):
         """Called when closing the gui, destroys the gui and closes the thread"""
@@ -112,7 +113,6 @@ class Gui(tk.Tk):
         if self.thread.is_alive():
             self.thread.join()
         self.quit()
-
 
     def safe_after(self, delay, func, *args, **kwargs):
         """Executes a function after a delay, but only if the program is still running."""

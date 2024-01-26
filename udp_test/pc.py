@@ -6,7 +6,7 @@ from struct import unpack
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Bind the socket to the port
-host, port = '0.0.0.0', 65000
+host, port = '0.0.0.0', 65000 # app incoming IPs
 server_address = (host, port)
 
 print(f'Starting UDP server on {host} port {port}')

@@ -7,7 +7,7 @@ from struct import pack
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-host, port = '192.168.0.8', 65000
+host, port = '169.231.49.78', 65000 # idk which pc ip to use
 server_address = (host, port)
 
 # Generate some random start values
