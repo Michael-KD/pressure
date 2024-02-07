@@ -14,6 +14,10 @@ import subprocess
 import paramiko
 
 class Gui(tk.Tk):
+
+    SSH_IP = '169.231.52.180'  # Define the IP address here
+    # SSH_IP = '169.231.174.195'
+
     def __init__(self):
 
         self.time_refresh = 10 # time in seconds between each update of the graph
@@ -51,6 +55,40 @@ class Gui(tk.Tk):
         self.control_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
         ttk.Button(self.control_frame, text='Graph', command=self.graph_data).grid(row=0, column=1, sticky="e")
         ttk.Button(self.control_frame, text='SSH', command=self.ssh).grid(row=0, column=2, sticky="e")
+        ttk.Button(self.control_frame, text='Pressure test', command=self.pressure_test).grid(row=0, column=3, sticky="e")
+
+        # Create the buttons
+        self.control_frame = ttk.Frame(self)
+        self.control_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        ttk.Button(self.control_frame, text='Graph', command=self.graph_data).grid(row=0, column=1, sticky="e")
+        ttk.Button(self.control_frame, text='SSH', command=self.ssh).grid(row=0, column=2, sticky="e")
+        ttk.Button(self.control_frame, text='Pressure test', command=self.pressure_test).grid(row=0, column=3, sticky="e")
+
+        # create a 4 text input boxes with labels for osr, model number, delay, and loops
+        self.input_frame = ttk.Frame(self)
+        self.input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        ttk.Label(self.input_frame, text="OSR:").grid(row=0, column=0)
+        self.osr_entry = ttk.Entry(self.input_frame)
+        self.osr_entry.grid(row=0, column=1)
+        self.osr_entry.insert(0, "4096")  # Set default value
+
+        ttk.Label(self.input_frame, text="Model Number:").grid(row=1, column=0)
+        self.model_number_entry = ttk.Entry(self.input_frame)
+        self.model_number_entry.grid(row=1, column=1)
+        self.model_number_entry.insert(0, "01")  # Set default value
+
+        ttk.Label(self.input_frame, text="Delay:").grid(row=2, column=0)
+        self.delay_entry = ttk.Entry(self.input_frame)
+        self.delay_entry.grid(row=2, column=1)
+        self.delay_entry.insert(0, "9.04")  # Set default value
+
+        ttk.Label(self.input_frame, text="Loops:").grid(row=3, column=0)
+        self.loops_entry = ttk.Entry(self.input_frame)
+        self.loops_entry.grid(row=3, column=1)
+        self.loops_entry.insert(0, "1000")  # Set default value
+        
+        
 
         # do i need all these?
         self.grid_columnconfigure(0, weight=1)
@@ -91,34 +129,6 @@ class Gui(tk.Tk):
             self.after(delay, func, *args, **kwargs)
 
 
-    def start_test(self):
-        """Starts the test"""
-        if self.thread is None or not self.thread.is_alive():
-            print("Starting test...")
-
-            # Create an SSH client
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-            # Connect to the server
-            print("Connecting to the server...")
-            ssh.connect('169.231.49.78', username='lubin', password='spaceball') ### change ip
-            print("Connected to the server.")
-
-            # Use SCP to download the file
-            print("Downloading the file...")
-            scp = ssh.open_sftp()
-            scp.get('/home/lubin/Code/pressuresensor/data.csv', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/download_data.csv')
-            scp.close()
-            print("File downloaded.")
-
-            # Start the thread to update the data
-            print("Starting the data update thread...")
-            self.running = True
-            self.thread = threading.Thread(target=self.update_data)
-            self.thread.start()
-            print("Data update thread started.")
-
     def graph_data(self):
         """Downloads the file and graphs it"""
         print("Downloading the file...")
@@ -129,12 +139,13 @@ class Gui(tk.Tk):
 
         # Connect to the server
         print("Connecting to the server...")
-        ssh.connect('169.231.49.78', username='lubin', password='spaceball') ### change ip
+        ssh.connect(self.SSH_IP, username='lubin', password='spaceball') ### change ip
         print("Connected to the server.")
 
         # Use SCP to download the file
         scp = ssh.open_sftp()
-        scp.get('/home/lubin/Code/pressuresensor/data.csv', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/download_data.csv')
+        # scp.get('/home/lubin/Code/pressuresensor/data.csv', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/download_data.csv')
+        scp.get('/home/lubin/Code/pressuresensor/pressure.py', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/pressurefast.py')
         scp.close()
         print("File downloaded.")
 
@@ -146,9 +157,41 @@ class Gui(tk.Tk):
             print("download_data.csv is empty. Waiting for data...")
 
     def ssh(self):
-        command = 'ssh -i C:\\Users\\micha\\.ssh\\id_rsa lubin@169.231.49.78'
+        """Opens a SSH connection to the server"""
+        command = f'ssh -i C:\\Users\\micha\\.ssh\\id_rsa lubin@{self.SSH_IP}'
         subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
 
+    def pressure_test(self):
+        """Starts the pressure test"""
+        osr = self.osr_entry.get()
+        model_number = self.model_number_entry.get()
+        delay = self.delay_entry.get()
+        loops = self.loops_entry.get()
+
+        parameters = [osr, model_number, delay, loops]
+        
+        # Create an SSH client
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        # Connect to the server
+        print("Connecting to the server...")
+        ssh.connect(self.SSH_IP, username='lubin', password='spaceball')
+        print("Connected to the server.")
+
+        # Execute the command
+        print("Starting the pressure test...")
+        command = f'cd ~/Code/pressuresensor && python pressure.py {" ".join(parameters)}'
+        stdin, stdout, stderr = ssh.exec_command(command)
+
+        # Wait for the command to complete
+        stdout.channel.recv_exit_status()
+
+        # Print the output of the command
+        print(stdout.read().decode())
+        print(stderr.read().decode())
+
+        ssh.close()
 
 
     def end_test(self):
