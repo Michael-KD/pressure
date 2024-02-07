@@ -15,8 +15,8 @@ import paramiko
 
 class Gui(tk.Tk):
 
-    SSH_IP = '169.231.52.180'  # Define the IP address here
-    # SSH_IP = '169.231.174.195'
+    # SSH_IP = '169.231.52.180'  # Define the IP address here
+    SSH_IP = '169.231.174.195'
 
     def __init__(self):
 
