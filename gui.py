@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import FuncFormatter
+import numpy as np
 
 import pandas as pd
 import threading
@@ -16,7 +17,7 @@ import paramiko
 class Gui(tk.Tk):
 
     # SSH_IP = '169.231.52.180'  # Define the IP address here
-    SSH_IP = '169.231.174.195'
+    SSH_IP = '169.231.161.24'
 
     def __init__(self):
 
@@ -111,9 +112,19 @@ class Gui(tk.Tk):
             ax.set_ylabel(column)
             ax.grid(True)
             if column == 'Pressure':
+                ax.set_ylabel("Pressure (mbar)")
                 formatter = FuncFormatter(lambda y, _: '{:.16g}'.format(y))
                 ax.yaxis.set_major_formatter(formatter)
 
+                # Calculate the running RMS of the last 100 data points
+                rms25 = df[column].rolling(window=25).apply(lambda x: np.sqrt(np.mean(x**2)))
+                rms100 = df[column].rolling(window=100).apply(lambda x: np.sqrt(np.mean(x**2)))
+
+                # Plot the running RMS on the graph
+                ax.plot(df["Time"], rms25, label='RMS 25', color='red')
+                ax.plot(df["Time"], rms100, label='RMS 100', color='black')
+
+            ax.legend()
 
         self.canvas.draw()
 
@@ -144,8 +155,8 @@ class Gui(tk.Tk):
 
         # Use SCP to download the file
         scp = ssh.open_sftp()
-        # scp.get('/home/lubin/Code/pressuresensor/data.csv', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/download_data.csv')
-        scp.get('/home/lubin/Code/pressuresensor/pressure.py', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/pressurefast.py')
+        scp.get('/home/lubin/Code/pressuresensor/data.csv', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/download_data.csv')
+        # scp.get('/home/lubin/Code/pressuresensor/pressure.py', 'C:/Users/micha/Documents/Code/LUBIN_LAB/pressuresensor/pressurefast.py')
         scp.close()
         print("File downloaded.")
 
