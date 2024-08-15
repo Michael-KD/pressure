@@ -131,13 +131,13 @@ void MS_5803::readSensor() {
     SENS = SENS - SENS2;
 
     _rawPressure = (((int64_t)D1 * SENS) / 2097152 - OFF) / 32768;
-    Serial.println(_rawPressure);
     _pressure = (float)_rawPressure / 100.0;
-    Serial.println(_pressure);
+    // Serial.println(_rawPressure);
+    // Serial.println(_pressure);
 
-    Serial.println(TEMP);
     _cTemp = (float)TEMP / 100.0;
-    Serial.println(_cTemp);
+    // Serial.println(TEMP);
+    // Serial.println(_cTemp);
 
 }
 
