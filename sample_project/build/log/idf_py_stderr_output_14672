@@ -1,0 +1,14 @@
+CMake Error at C:/Users/Plaid/esp/v5.3/esp-idf/tools/cmake/build.cmake:552 (message):
+  ERROR: Because espressif/arduino-esp32 (3.0.4) depends on idf
+  (>=5.1.0,<5.2.0) which doesn't match any versions, espressif/arduino-esp32
+  is forbidden.
+
+  So, because no versions of espressif/arduino-esp32 match >3.0.4,<4.0.0
+
+   and project depends on espressif/arduino-esp32 (^3.0.4), version solving failed.
+
+Call Stack (most recent call first):
+  C:/Users/Plaid/esp/v5.3/esp-idf/tools/cmake/project.cmake:710 (idf_build_process)
+  CMakeLists.txt:8 (project)
+
+
