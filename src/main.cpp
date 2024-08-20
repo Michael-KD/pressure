@@ -143,37 +143,30 @@ void setup() {
 void loop() {
     unsigned long currentTime = millis();
 
-    // if (currentTime - lastGPSReadTime >= 10000) {
-    //     myGNSS.checkUblox(); //See if new data is available. Process bytes as they come in.
-    //     Serial.println("Checking GNSS");
-    //     if(nmea.isValid() == true) {
-    //         long latitude_mdeg = nmea.getLatitude();
-    //         long longitude_mdeg = nmea.getLongitude();
+    if (currentTime - lastGPSReadTime >= 10000) {
+        myGNSS.checkUblox(); //See if new data is available. Process bytes as they come in.
+        Serial.println("Checking GNSS");
+        if(nmea.isValid() == true) {
+            long latitude_mdeg = nmea.getLatitude();
+            long longitude_mdeg = nmea.getLongitude();
 
-    //         Serial.print("Latitude (deg): ");
-    //         Serial.println(latitude_mdeg / 1000000., 6);
-    //         Serial.print("Longitude (deg): ");
-    //         Serial.println(longitude_mdeg / 1000000., 6);
+            Serial.print("Latitude (deg): ");
+            Serial.println(latitude_mdeg / 1000000., 6);
+            Serial.print("Longitude (deg): ");
+            Serial.println(longitude_mdeg / 1000000., 6);
 
-    //         nmea.clear(); // Clear the MicroNMEA storage to make sure we are getting fresh data
-    //     }
+            nmea.clear(); // Clear the MicroNMEA storage to make sure we are getting fresh data
+        }
         
 
-
-
-    //     lastGPSReadTime = currentTime;
-    // }
+        lastGPSReadTime = currentTime;
+    }
 
     if (currentTime - lastPressureReadTime >= 30) {
         pressureSensor.readSensor();
 
         pressure = pressureSensor.getPressure();
         temperature = pressureSensor.getTemp();
-        // Serial.print("Pressure: ");
-        // Serial.print(pressure, 2);
-        // Serial.print(" mbar, Temperature: ");
-        // Serial.print(temperature, 2);
-        // Serial.println(" C");
 
         // teleplot data
         Serial.print(">pressure:");
