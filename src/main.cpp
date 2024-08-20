@@ -93,6 +93,7 @@ void setup() {
     while (!Serial) {
         ; // Wait for serial port to connect.
     }
+    Serial.println("Serial initialized.");
 
     // Initialize SD card
     if (!SD.begin(chipSelect)) {
