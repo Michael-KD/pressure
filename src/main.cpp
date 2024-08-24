@@ -308,51 +308,43 @@
 #include <SPI.h>
 #include <MS5803_01.h> 
 
-// Declare 'sensor' as the object that will refer to your MS5803 in the sketch
-// Enter the oversampling value as an argument. Valid choices are
-// 256, 512, 1024, 2048, 4096. Library default = 512.
-MS_5803 sensor = MS_5803(256);
+unsigned long startTime;
+const unsigned long duration = 10000; // 1 second in milliseconds
+const int osr = 4096; // Set the oversampling rate, options: 256, 512, 1024, 2048, 4096
+
+MS_5803 sensor = MS_5803(osr);
+
 
 void setup() {
-  // Start the serial ports.
-  Serial.begin(115200); // other values include 9600, 14400, 57600 etc.
-  delay(2000);
-  // Initialize the MS5803 sensor. This will report the
-  // conversion coefficients to the Serial terminal if present.
-  // If you don't want all the coefficients printed out, 
-  // set sensor.initializeMS_5803(false).
-  if (sensor.initializeMS_5803()) {
-    Serial.println( "MS5803 CRC check OK." );
-  } 
-  else {
-    Serial.println( "MS5803 CRC check FAILED!" );
+  Serial.begin(115200);
+  // pause until serial monitor is opened
+  while (!Serial) {
+    ; // wait for serial port to connect
   }
+
+  if (sensor.initializeMS_5803()) {
+    Serial.println("MS5803 CRC check OK.");
+  } else {
+    Serial.println("MS5803 CRC check FAILED!");
+  }
+  
   delay(3000);
+  startTime = millis(); // Record the start time
 }
 
 void loop() {
-  // Use readSensor() function to get pressure and temperature reading. 
-  sensor.readSensor();
-   // Uncomment the print commands below to show the raw D1 and D2 values
-//  Serial.print("D1 = ");
-//  Serial.println(sensor.D1val());
-//  Serial.print("D2 = ");
-//  Serial.println(sensor.D2val());
-
-    // Show pressure
-  Serial.print(">pressure:");
-  Serial.println(sensor.pressure());
-
-//   Serial.print("Pressure = ");
-//   Serial.print(sensor.pressure());
-//   Serial.println(" mbar");
-  
-//   // Show temperature
-  Serial.print(">temperature:");
-  Serial.println(sensor.temperature());
-//   Serial.print("Temperature = ");
-//   Serial.print(sensor.temperature());
-//   Serial.println("C");
-
-//   delay(1000); // For readability
+  if (millis() - startTime <= duration) {
+    sensor.readSensor();
+    
+    Serial.print(">pressure:");
+    Serial.println(sensor.pressure());
+    
+    Serial.print(">temperature:");
+    Serial.println(sensor.temperature());
+  } else {
+    // If more than 1 second has passed, stop the loop
+    while(true) {
+      // This empty loop will prevent further execution
+    }
+  }
 }
