@@ -11,22 +11,22 @@ def read_csv(file_path):
         next(csv_reader)  # Skip header
         for row in csv_reader:
             timestamp = float(row[0]) if row[0] else None
-            pressure = float(row[1]) if row[1] else None
-            if timestamp is not None and pressure is not None:
-                data.append((timestamp, pressure))
+            temperature = float(row[2]) if row[2] else None
+            if timestamp is not None and temperature is not None:
+                data.append((timestamp, temperature))
     return data
 
 def plot_data(data, ax, title):
-    timestamps, pressures = zip(*data)
+    timestamps, temperatures = zip(*data)
     relative_times = [(t - timestamps[0]) / 1000 for t in timestamps]  # Convert to seconds
-    ax.plot(relative_times, pressures)
+    ax.plot(relative_times, temperatures)
     
     # Calculate standard deviation
-    std_dev = np.std(pressures)
+    std_dev = np.std(temperatures)
     
-    ax.set_title(f"{title}\n({len(data)/10} hz, σ = {std_dev:.4f} mbar)")
+    ax.set_title(f"{title}\n({len(data)/10} hz, σ = {std_dev:.4f} C)")
     ax.set_xlabel('Time (seconds)')
-    ax.set_ylabel('Pressure (mbar)')
+    ax.set_ylabel('temperature (C)')
     ax.ticklabel_format(useOffset=False, style='plain')
 
 def main():
@@ -38,23 +38,23 @@ def main():
     if len(csv_files) == 1:
         axs = [axs]
     
-    all_pressures = []
+    all_temperatures = []
     for i, csv_file in enumerate(csv_files):
         file_path = os.path.join(folder_path, csv_file)
         data = read_csv(file_path)
-        plot_data(data, axs[i], f'Pressure vs Time - {csv_file}')
-        all_pressures.extend([p for _, p in data])
+        plot_data(data, axs[i], f'temperature vs Time - {csv_file}')
+        all_temperatures.extend([p for _, p in data])
     
     # Set uniform y-axis limits
-    y_min, y_max = min(all_pressures), max(all_pressures)
+    y_min, y_max = min(all_temperatures), max(all_temperatures)
     y_range = y_max - y_min
     y_padding = y_range * 0.1  # Add 10% padding
     for ax in axs:
         ax.set_ylim(y_min - y_padding, y_max + y_padding)
     
     plt.tight_layout()
-    plt.savefig('pressure_plots.png')
-    print("Plots saved as 'pressure_plots.png'")
+    plt.savefig('temperature_plots.png')
+    print("Plots saved as 'temperature_plots.png'")
 
 if __name__ == "__main__":
     main()
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 #     try:
 #         df = pd.read_csv(file_path)
         
-#         required_columns = ['timestamp', 'pressure', 'temperature']
+#         required_columns = ['timestamp', 'temperature', 'temperature']
 #         missing_columns = [col for col in required_columns if col not in df.columns]
 #         if missing_columns:
 #             raise ValueError(f"Missing columns: {', '.join(missing_columns)}")
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 # def calculate_std_devs(df):
 #     std_devs = {}
-#     for column in ['pressure', 'temperature', 'time_diff']:
+#     for column in ['temperature', 'temperature', 'time_diff']:
 #         if column in df.columns:
 #             std_devs[f'{column}_std'] = df[column].dropna().std()
 #         else:
@@ -119,12 +119,12 @@ if __name__ == "__main__":
 
 # def print_summary_table(std_devs, labels):
 #     table_data = []
-#     headers = ['File', 'Pressure StdDev', 'Temperature StdDev', 'Time Steps StdDev']
+#     headers = ['File', 'temperature StdDev', 'Temperature StdDev', 'Time Steps StdDev']
     
 #     for label, std_dev in zip(labels, std_devs):
 #         row = [
 #             label,
-#             f"{std_dev.get('pressure_std', 'N/A'):.6f}",
+#             f"{std_dev.get('temperature_std', 'N/A'):.6f}",
 #             f"{std_dev.get('temperature_std', 'N/A'):.6f}",
 #             f"{std_dev.get('time_diff_std', 'N/A'):.6f}"
 #         ]
@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
 #     std_devs = [calculate_std_devs(df) for df in dataframes]
 
-#     metrics = [('Pressure', 'pressure_std'), ('Temperature', 'temperature_std'), ('Time Steps', 'time_diff_std')]
+#     metrics = [('temperature', 'temperature_std'), ('Temperature', 'temperature_std'), ('Time Steps', 'time_diff_std')]
 #     for metric_name, metric_key in metrics:
 #         data = []
 #         valid_labels = []
